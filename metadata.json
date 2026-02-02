@@ -1,0 +1,5 @@
+{
+  "name": "Prism - BERT Visualization",
+  "description": "An interactive 3D scientific visualization tool for the BERT-base-uncased model architecture.",
+  "requestFramePermissions": []
+}

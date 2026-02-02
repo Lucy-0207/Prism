@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Prism | Model Architecture Visualizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Noto+Serif+SC:wght@400;500;700&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'system-ui', 'sans-serif'],
+              serif: ['Noto Serif SC', 'Georgia', 'serif'],
+              mono: ['JetBrains Mono', 'monospace'],
+            },
+            colors: {
+              prism: {
+                bg: '#0E1116',
+                panel: '#161B22',
+                border: '#30363D',
+                text: '#C9D1D9',
+                accent: '#2EA44F', // Muted Green for structure
+                highlight: '#58A6FF', // Muted Blue for selection
+                gold: '#D29922', // Attention
+              }
+            }
+          }
+        }
+      }
+    </script>
+    <style>
+      body {
+        background-color: #0E1116;
+        color: #C9D1D9;
+        margin: 0;
+        overflow: hidden; /* Prevent scroll on body, let canvas handle it */
+      }
+      /* Markdown Styles */
+      .markdown-content p {
+        margin-bottom: 0.75rem;
+        line-height: 1.6;
+      }
+      .markdown-content strong {
+        color: #fff;
+        font-weight: 600;
+      }
+      .markdown-content code {
+        font-family: 'JetBrains Mono', monospace;
+        background: rgba(110, 118, 129, 0.2);
+        padding: 0.2em 0.4em;
+        border-radius: 4px;
+        font-size: 0.85em;
+      }
+      .katex {
+        font-size: 1.1em;
+        color: #e6edf3;
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.4/",
+    "react": "https://esm.sh/react@^19.2.4",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "@react-three/fiber": "https://esm.sh/@react-three/fiber@^9.5.0",
+    "three": "https://esm.sh/three@^0.182.0",
+    "@react-three/drei": "https://esm.sh/@react-three/drei@^10.7.7",
+    "@google/genai": "https://esm.sh/@google/genai@^1.39.0",
+    "react-markdown": "https://esm.sh/react-markdown@9",
+    "remark-math": "https://esm.sh/remark-math@6",
+    "rehype-katex": "https://esm.sh/rehype-katex@7"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
