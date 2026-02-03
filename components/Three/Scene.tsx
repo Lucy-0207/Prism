@@ -20,14 +20,15 @@ const SceneContent: React.FC<{ data: ModelGraph }> = ({ data }) => {
     if (cameraControlsRef.current) {
       if (diffMode) {
          // Pull back for split view
-         cameraControlsRef.current.setLookAt(0, 5, 25, 0, 5, 0, true);
+         cameraControlsRef.current.setLookAt(0, 10, 36, 0, 8, 0, true);
       } else if (selectedLayer) {
         // Zoom in closer for the detailed view
         cameraControlsRef.current.dollyTo(8, true);
-        cameraControlsRef.current.rotateTo(Math.PI / 4, Math.PI / 3, true); 
       } else {
-        cameraControlsRef.current.dollyTo(18, true);
-        cameraControlsRef.current.rotateTo(0, Math.PI / 2.5, true);
+        // Standard View: Center on the model stack
+        // Updated: Since model base is now Y=0, stack goes up to Y~20. 
+        // Look at Y=8 (approx mid-lower stack) to see base and structure.
+        cameraControlsRef.current.setLookAt(18, 16, 18, 0, 8, 0, true);
       }
     }
   }, [selectedLayer, diffMode]);
@@ -72,32 +73,32 @@ const SceneContent: React.FC<{ data: ModelGraph }> = ({ data }) => {
       {diffMode ? (
          <group>
              {/* Left Model (Base) */}
-             <group position={[-5, -2, 0]}>
-                 <Text position={[0, 16, 0]} fontSize={0.5} color="white">Model A (Base)</Text>
+             <group position={[-6, 0, 0]}>
+                 <Text position={[0, 20, 0]} fontSize={0.5} color="white">Model A (Base)</Text>
                  <BertGoldenSample data={data} />
              </group>
              
              {/* Divider */}
-             <mesh position={[0, 5, 0]}>
-                 <cylinderGeometry args={[0.05, 0.05, 20]} />
+             <mesh position={[0, 10, 0]}>
+                 <cylinderGeometry args={[0.05, 0.05, 30]} />
                  <meshBasicMaterial color="#30363D" transparent opacity={0.5} />
              </mesh>
 
              {/* Right Model (Comparison) - MOCKING diff by using same model but offset */}
-             <group position={[5, -2, 0]}>
-                 <Text position={[0, 16, 0]} fontSize={0.5} color="#58A6FF">Model B (Target)</Text>
+             <group position={[6, 0, 0]}>
+                 <Text position={[0, 20, 0]} fontSize={0.5} color="#58A6FF">Model B (Target)</Text>
                  <BertGoldenSample data={data} /> {/* In real app, pass comparisonData */}
              </group>
          </group>
       ) : (
-         <group position={[0, -2, 0]}>
+         <group position={[0, 0, 0]}>
             <BertGoldenSample data={data} />
          </group>
       )}
 
       {/* Floor */}
       <Grid 
-        position={[0, -6, 0]} 
+        position={[0, -0.05, 0]} 
         args={[30, 30]} 
         cellColor="#21262d" 
         sectionColor="#30363D" 
@@ -112,7 +113,7 @@ const Scene: React.FC<SceneProps> = ({ data }) => {
   if (!data) return null;
   return (
     <Canvas 
-      camera={{ position: [10, 8, 10], fov: 40 }}
+      camera={{ position: [18, 16, 18], fov: 40 }}
       dpr={[1, 2]} // Support high DPI
       gl={{ antialias: true, alpha: false, toneMappingExposure: 1.2 }}
     >

@@ -95,6 +95,95 @@ const MODEL_GRAPH_SCHEMA: Schema = {
   required: ["model_name", "total_params", "mode", "layers", "topics"]
 };
 
+// --- Fallback Data (For 429/Offline handling) ---
+
+const FALLBACK_ROADMAP: ResearchRoadmap = {
+  topic: "Deep Learning Evolution (Offline Fallback)",
+  nodes: [
+    { id: "1", title: "AlexNet", year: 2012, type: "seminal", summary: "Deep CNN breakthrough on ImageNet." },
+    { id: "2", title: "ResNet", year: 2015, type: "improvement", summary: "Residual connections allow training very deep networks." },
+    { id: "3", title: "Attention Is All You Need", year: 2017, type: "seminal", summary: "Introduction of the Transformer architecture." },
+    { id: "4", title: "BERT", year: 2018, type: "improvement", summary: "Bidirectional pre-training for language understanding." }
+  ],
+  edges: [
+    { source: "1", target: "2", relation: "optimization", label: "Depth" },
+    { source: "2", target: "3", relation: "refutation", label: "Attention Shift" },
+    { source: "3", target: "4", relation: "inheritance", label: "Encoder" }
+  ]
+};
+
+const FALLBACK_MODEL: ModelGraph = {
+  model_name: "Demo Transformer (Quota Limit Reached)",
+  total_params: "110M",
+  mode: "standard",
+  topics: ["Transformer", "Deep Learning"],
+  layers: [
+    {
+      id: "emb", name: "Embeddings", type: "Embedding",
+      input_shape: ["Batch", "Seq"], output_shape: ["Batch", "Seq", "768"],
+      description: "Fallback Embedding Layer",
+      explanation_card: { summary: "Maps tokens to vectors.", technical: "Lookup Table", paper_citation: "" }
+    },
+    {
+      id: "enc_1", name: "Encoder Block 1", type: "TransformerBlock",
+      input_shape: ["Batch", "Seq", "768"], output_shape: ["Batch", "Seq", "768"],
+      description: "Standard Encoder",
+      explanation_card: { summary: "Processes context.", technical: "Self-Attention + FFN", paper_citation: "" },
+      sub_layers: [
+          { 
+            id: "attn_1", 
+            name: "Self-Attention", 
+            type: "MultiHeadAttention", 
+            input_shape: ["Batch", "Seq", "768"],
+            output_shape: ["Batch", "Seq", "768"],
+            description: "Self-attention mechanism",
+            explanation_card: { summary: "Attention", technical: "", paper_citation: "" } 
+          },
+          { 
+            id: "ffn_1", 
+            name: "FFN", 
+            type: "FFN", 
+            input_shape: ["Batch", "Seq", "768"],
+            output_shape: ["Batch", "Seq", "768"],
+            description: "Feed-forward network",
+            explanation_card: { summary: "Feed Forward", technical: "", paper_citation: "" } 
+          }
+      ]
+    },
+    {
+      id: "enc_2", name: "Encoder Block 2", type: "TransformerBlock",
+      input_shape: ["Batch", "Seq", "768"], output_shape: ["Batch", "Seq", "768"],
+      description: "Standard Encoder",
+      explanation_card: { summary: "Processes context.", technical: "Self-Attention + FFN", paper_citation: "" },
+      sub_layers: [
+          { 
+            id: "attn_2", 
+            name: "Self-Attention", 
+            type: "MultiHeadAttention", 
+            input_shape: ["Batch", "Seq", "768"],
+            output_shape: ["Batch", "Seq", "768"],
+            description: "Self-attention mechanism",
+            explanation_card: { summary: "Attention", technical: "", paper_citation: "" } 
+          },
+          { 
+            id: "ffn_2", 
+            name: "FFN", 
+            type: "FFN", 
+            input_shape: ["Batch", "Seq", "768"],
+            output_shape: ["Batch", "Seq", "768"],
+            description: "Feed-forward network",
+            explanation_card: { summary: "Feed Forward", technical: "", paper_citation: "" } 
+          }
+      ]
+    },
+    {
+      id: "out", name: "Output Head", type: "Output",
+      input_shape: ["Batch", "Seq", "768"], output_shape: ["Batch", "Vocab"],
+      description: "Prediction Head",
+      explanation_card: { summary: "Predicts next token.", technical: "Linear Projection", paper_citation: "" }
+    }
+  ]
+};
 
 // --- API Functions ---
 
@@ -127,8 +216,9 @@ export const fetchEvolutionRoadmap = async (topic: string): Promise<ResearchRoad
     throw new Error("No data returned from Gemini");
     
   } catch (error) {
-    console.error("Gemini API Error:", error);
-    throw error;
+    console.warn("Gemini API Error (Roadmap), using fallback:", error);
+    // Return fallback to prevent app crash on quota limit
+    return { ...FALLBACK_ROADMAP, topic: `${topic} (Offline)` };
   }
 };
 
@@ -165,8 +255,8 @@ export const generateModelFromQuery = async (query: string): Promise<ModelGraph>
     }
     throw new Error("Empty response");
   } catch (e) {
-    console.error(e);
-    throw e;
+    console.warn("Gemini API Error (Query), using fallback:", e);
+    return { ...FALLBACK_MODEL, model_name: query };
   }
 };
 
@@ -219,13 +309,18 @@ export const generateModelFromPDF = async (base64Data: string, mimeType: string 
     }
     throw new Error("Empty response from PDF analysis");
   } catch (e) {
-      console.error(e);
-      throw e;
+      console.warn("Gemini API Error (PDF), using fallback:", e);
+      return { ...FALLBACK_MODEL, model_name: "PDF Analysis (Offline)" };
   }
 };
 
 // Kept for backward compatibility
 export const enrichModelWithPaper = async (modelGraph: ModelGraph, paperText: string, tier: UserTier = 'apprentice'): Promise<ModelGraph> => {
+  // If fallback graph is active, don't try to enrich
+  if (modelGraph.model_name.includes("Offline") || modelGraph.model_name.includes("Quota")) {
+      return modelGraph;
+  }
+
   const simplifiedStructure = modelGraph.layers.map(l => ({
     id: l.id,
     type: l.type,
@@ -277,7 +372,8 @@ export const enrichModelWithPaper = async (modelGraph: ModelGraph, paperText: st
     }
     return modelGraph;
   } catch (error) {
-    console.error("Enrichment Error:", error);
+    console.warn("Enrichment Error:", error);
+    // Graceful degradation: return original graph if enrichment fails
     return modelGraph; 
   }
 };

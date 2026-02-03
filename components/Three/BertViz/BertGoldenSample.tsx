@@ -27,7 +27,8 @@ export const BertGoldenSample: React.FC<BertGoldenSampleProps> = ({ data }) => {
   // Layout Engine
   const BASE_HEIGHT = 1.2;
   const EXPANDED_HEIGHT = 8.0; 
-  const START_Y = -6;
+  // CHANGED: Lifted from -6 to 0 to sit on the floor
+  const START_Y = 0;
 
   return (
     <group>

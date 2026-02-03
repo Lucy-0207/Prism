@@ -76,6 +76,76 @@ export const DetailedBlock: React.FC<DetailedBlockProps> = ({ layer, position, i
       edgeColor = "#30363D";
   }
 
+  // --- Internal Rendering Logic ---
+  const renderInternals = () => {
+    // 1. Specialized Transformer View
+    if (layer.type === 'TransformerBlock') {
+        return (
+            <>
+                <group position={[0, -1.5, 0]}> <AttentionStation /> </group>
+                <mesh position={[0, 0, 0]}>
+                    <cylinderGeometry args={[0.05, 0.05, 1]} />
+                    <meshBasicMaterial color="#30363D" />
+                </mesh>
+                <group position={[0, 1.5, 0]}> <FFNStation /> </group>
+            </>
+        );
+    }
+
+    // 2. Generic Sub-layers (from PDF/JSON)
+    if (layer.sub_layers && layer.sub_layers.length > 0) {
+        return (
+            <group>
+                {/* Connecting Line */}
+                <mesh position={[0, 0, 0]}>
+                     <cylinderGeometry args={[0.02, 0.02, layer.sub_layers.length * 1.5]} />
+                     <meshBasicMaterial color="#30363D" />
+                </mesh>
+                
+                {layer.sub_layers.map((sub, idx) => {
+                    // Distribute vertically
+                    const offset = (idx - (layer.sub_layers!.length - 1) / 2) * 1.5;
+                    return (
+                        <group key={sub.id} position={[0, offset, 0]}>
+                             <mesh>
+                                <boxGeometry args={[3.5, 0.8, 0.5]} />
+                                <meshBasicMaterial color="#0d1117" transparent opacity={0.8} />
+                                <Edges color="#a1a1aa" />
+                            </mesh>
+                            <Text position={[0, 0, 0.3]} fontSize={0.15} color="#e5e7eb">
+                                {sub.name}
+                            </Text>
+                            <Text position={[0, -0.25, 0.3]} fontSize={0.1} color="#6b7280">
+                                {sub.type}
+                            </Text>
+                        </group>
+                    );
+                })}
+            </group>
+        );
+    }
+
+    // 3. Default "Internal Processing" View (for simple blocks)
+    return (
+        <group>
+             <mesh position={[0, 0, 0]}>
+                 <boxGeometry args={[4, 3, 1]} />
+                 <meshBasicMaterial color="#161b22" wireframe transparent opacity={0.3} />
+             </mesh>
+             
+             {/* Animated Abstract Core */}
+             <mesh rotation={[Math.PI/4, Math.PI/4, 0]}>
+                 <octahedronGeometry args={[1, 0]} />
+                 <meshBasicMaterial color={edgeColor} wireframe transparent opacity={0.2} />
+             </mesh>
+             
+             <Text position={[0, -2, 0]} fontSize={0.2} color="#8b949e">
+                Atomic Layer
+             </Text>
+        </group>
+    );
+  };
+
   return (
     <group 
       ref={groupRef} 
@@ -90,26 +160,31 @@ export const DetailedBlock: React.FC<DetailedBlockProps> = ({ layer, position, i
         </Text>
       )}
 
-      {/* EXPANDED VIEW (Only for TransformerBlock currently supported with stations) */}
-      {isSelected && !isDisabled && !isBypassed && layer.type === 'TransformerBlock' ? (
+      {/* EXPANDED VIEW (General Logic for ALL Types) */}
+      {isSelected && !isDisabled && !isBypassed ? (
           <group>
+              {/* Main Back Panel Frame */}
               <mesh position={[0, 0, -1]}>
                   <planeGeometry args={[8, 7]} />
                   <meshBasicMaterial color="#0d1117" transparent opacity={0.8} />
                   <Edges color="#30363D" />
               </mesh>
-              <Text position={[-3.5, 3.2, 0]} fontSize={0.25} color="#8b949e" anchorX="left">
-                  {layer.name}
-              </Text>
-              <group position={[0, -1.5, 0]}> <AttentionStation /> </group>
-              <mesh position={[0, 0, 0]}>
-                 <cylinderGeometry args={[0.05, 0.05, 1]} />
-                 <meshBasicMaterial color="#30363D" />
-              </mesh>
-              <group position={[0, 1.5, 0]}> <FFNStation /> </group>
+              
+              {/* Layer Title */}
+              <group position={[-3.5, 3.2, 0]}>
+                  <Text fontSize={0.25} color="#8b949e" anchorX="left">
+                      {layer.name}
+                  </Text>
+                  <Text position={[0, -0.3, 0]} fontSize={0.15} color="#30363D" anchorX="left">
+                      ({layer.type})
+                  </Text>
+              </group>
+              
+              {/* Dynamic Internals */}
+              {renderInternals()}
           </group>
       ) : (
-          // --- COMPACT VIEW (For all types) ---
+          // --- COMPACT VIEW (Standard Block) ---
           <group visible={!isGhosted || isSelected || isDisabled || isBypassed}> 
             <mesh>
                 <boxGeometry args={[4.5, 1.0, 2.5]} />
@@ -151,7 +226,7 @@ export const DetailedBlock: React.FC<DetailedBlockProps> = ({ layer, position, i
                 {layer.name}
             </Text>
             
-            {isSelected && layer.type !== 'TransformerBlock' && (
+            {isSelected && (
                 <Text position={[0, -0.8, 1.3]} fontSize={0.15} color="#8b949e">
                     (Click to view details in Side Panel)
                 </Text>
