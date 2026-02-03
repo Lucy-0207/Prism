@@ -2,7 +2,22 @@
 import { GoogleGenAI, Type, Schema } from "@google/genai";
 import { ResearchRoadmap, LayerData, ModelGraph, UserTier } from "../types";
 
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+const apiKeyFromNode = typeof process !== 'undefined' && (process as any).env 
+  ? ((process as any).env.API_KEY || (process as any).env.GEMINI_API_KEY) 
+  : undefined;
+const apiKeyFromVite = typeof import.meta !== 'undefined' && (import.meta as any).env 
+  ? (import.meta as any).env.VITE_GEMINI_API_KEY 
+  : undefined;
+const API_KEY = (apiKeyFromNode || apiKeyFromVite) as string | undefined;
+const HAS_KEY = !!API_KEY && API_KEY !== "undefined" && API_KEY.trim().length > 0;
+let ai: GoogleGenAI | null = null;
+try {
+  if (HAS_KEY) {
+    ai = new GoogleGenAI({ apiKey: API_KEY! });
+  }
+} catch (e) {
+  ai = null;
+}
 
 // --- Schemas ---
 
@@ -188,6 +203,9 @@ const FALLBACK_MODEL: ModelGraph = {
 // --- API Functions ---
 
 export const fetchEvolutionRoadmap = async (topic: string): Promise<ResearchRoadmap> => {
+  if (!ai) {
+    return { ...FALLBACK_ROADMAP, topic: `${topic} (Offline)` };
+  }
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
@@ -226,6 +244,9 @@ export const fetchEvolutionRoadmap = async (topic: string): Promise<ResearchRoad
  * Generates a full 3D-ready ModelGraph from a simple text query (e.g., "Llama 3").
  */
 export const generateModelFromQuery = async (query: string): Promise<ModelGraph> => {
+  if (!ai) {
+    return { ...FALLBACK_MODEL, model_name: `${query} (Offline)` };
+  }
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
@@ -264,6 +285,9 @@ export const generateModelFromQuery = async (query: string): Promise<ModelGraph>
  * Generates a ModelGraph by analyzing a PDF (passed as base64 string).
  */
 export const generateModelFromPDF = async (base64Data: string, mimeType: string = 'application/pdf'): Promise<ModelGraph> => {
+  if (!ai) {
+    return { ...FALLBACK_MODEL, model_name: "PDF Analysis (Offline)" };
+  }
   try {
     const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash',
@@ -319,6 +343,9 @@ export const enrichModelWithPaper = async (modelGraph: ModelGraph, paperText: st
   // If fallback graph is active, don't try to enrich
   if (modelGraph.model_name.includes("Offline") || modelGraph.model_name.includes("Quota")) {
       return modelGraph;
+  }
+  if (!ai) {
+    return modelGraph;
   }
 
   const simplifiedStructure = modelGraph.layers.map(l => ({
